@@ -1,0 +1,42 @@
+name: Build repo.js
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+        with:
+          repository: "zkoppert/innersource-crawler"
+          path: "innersource-crawler"
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9.0
+      - name: Install dependencies
+        run: |
+          cd innersource-crawler
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Build env file
+        run: |
+          echo "\n\n" > innersource-crawler/.env
+          cat << EOF > innersource-crawler/.env
+          GH_TOKEN='${{ secrets.ADMIN_TOKEN}}'
+          ORGANIZATION='nextgen-ealogy'
+          TOPIC='inner-source'
+          EOF
+      - name: Generate repos file
+        run: |
+          cd innersource-crawler
+          python ./crawler.py
+          mv repos.json ../docs/repos.json
+      - name: Checkin repos
+        uses: test-room-7/action-update-file@v1
+        with:
+          file-path: docs/repos.json
+          commit-msg: Update repos file
+          github-token: ${{ secrets.GITHUB_TOKEN }}
