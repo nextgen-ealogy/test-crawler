@@ -36,6 +36,8 @@ jobs:
           mv repos.json ../data/repos.json
       - name: Build Website
         run: |
+          mkdir css
+          npm i
           npm run build
       - name: Checkin repos
         uses: test-room-7/action-update-file@v1

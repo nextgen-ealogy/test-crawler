@@ -101,7 +101,7 @@ dist
 # TernJS port file
 .tern-port
 
-css
+
 codelabs/**/target
 data/repos.json
 _site
