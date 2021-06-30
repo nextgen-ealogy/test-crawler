@@ -38,8 +38,6 @@ jobs:
         run: |
           mkdir css
           npm i
-          pwd
-          ls node_modules
           npm run build
       - name: Checkin repos
         uses: test-room-7/action-update-file@v1
