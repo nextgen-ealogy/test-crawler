@@ -1,4 +1,4 @@
-name: Build repo.js
+name: Build project
 
 on:
   workflow_dispatch:
@@ -33,11 +33,13 @@ jobs:
         run: |
           cd innersource-crawler
           python ./crawler.py
-          touch repos.json
-          mv repos.json ../repos.json
+          mv repos.json ../data/repos.json
+      - name: Build Website
+        run: |
+          npm run build
       - name: Checkin repos
         uses: test-room-7/action-update-file@v1
         with:
-          file-path: repos.json
+          file-path: docs/
           commit-msg: Update repos file
           github-token: ${{ secrets.GITHUB_TOKEN }}

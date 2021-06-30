@@ -1,0 +1,17 @@
+$local-config: (
+  font-path: "static",
+);
+
+@import "settings-tools/_all-settings";
+
+@include import-font-families(); /* add this */
+
+body {
+  @include set-font-face("semi-bold"); /* add this */
+  @include set-font-scale("12", "s");
+
+  color: $color-font-darker;
+  text-align: center;
+  margin: 0;
+  padding: $mu500;
+}

@@ -1,0 +1,30 @@
+{
+  "name": "11ty",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm run css:build && eleventy --serve",
+    "build": "npm run css:build && eleventy --pathprefix 'adeo-developer-experience-aggegrator'",
+    "start:prod": "npm run build && serve _site",
+    "css:build": "npm run statics:copy && npx postcss scss/bundle.scss --output css/bundle.css",
+    "css:watch": "npm run statics:copy && npx postcss scss/bundle.scss --output css/bundle.css --watch",
+    "css:lint-fix": "npx stylelint scss/*.scss --fix",
+    "statics:copy": "rm -rf css/static && mkdir css/static && cp node_modules/@mozaic-ds/web-fonts/*.{woff,woff2} css/static"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@11ty/eleventy": "^0.11.1",
+    "@mozaic-ds/css-dev-tools": "^1.6.1",
+    "@mozaic-ds/styles": "^1.8.0",
+    "html-minifier": "^4.0.0",
+    "postcss": "^8.3.5",
+    "postcss-cli": "^8.3.1",
+    "serve": "^11.3.2"
+  },
+  "dependencies": {
+    "@mozaic-ds/web-fonts": "^1.0.1"
+  }
+}

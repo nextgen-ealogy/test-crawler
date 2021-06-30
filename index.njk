@@ -1,0 +1,14 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="css/bundle.css">
+    </head>
+    <body>
+        
+        <h1> Inner Source Projects </h1> 
+        <ul>
+            {%- for repo in collections.innerSourceRepos -%}
+                <li>{{ repo.name }}</li>
+                {%- endfor -%}
+        </ul>
+    </body>
+</html>
