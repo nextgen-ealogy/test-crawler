@@ -40,7 +40,9 @@ jobs:
         run: |
           mkdir css
           npm i
+          npm i -g zx
           npm run build
+          ./codelab.mjs
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@4.1.4
         with:

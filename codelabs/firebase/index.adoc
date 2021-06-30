@@ -1,0 +1,380 @@
+= Firebase 
+
+During this codelab, we will create an application for tracking our weight 📈 . 
+
+We will use of course the *Firebase ecosystem* and *Angular* for our web application.
+
+You do not need any skills on Angular to be able to complete this codelab. 
+
+== Getting Started
+
+We will first initialize the Firebase project and the Angular application. 
+
+The UI of the Angular application will be very simple. The main purpose is to understand how to link a front-end app to 
+a Firebase backend, not to write stylesheets. 
+
+* From the https://console.firebase.google.com/ console, login in and create a new project. (You can disable Google Analytics during the process of creating a new project).
+
+
+* This project will need the following tool provided by the Firebase stack. 
+** Google Authentication
+** Firestore (en mode *test*)
+** Cloud Functions (You maybe need to add your Credit Card. If you do not want to do so, that's not a problem, we will write a cloud function at the very end of this codelab)
+** Hosting
+
+* You can now install and configure the Firebase CLI. 
+
+[source]
+----
+npm install -g firebase-tools
+firebase login
+----
+
+* We will then initialize the Firebase project. During this process, you need : 
+** to enable the previous Firebase functionnalities listed previously.
+** to link the local project to the one created from the console. 
+** Everytime the CLI ask you a question, keep the default answer (*Except* for the `Configure as a single-page app` question. You need to say *Yes*). 
+
+[source]
+----
+mkdir weight-tracking
+cd weight-tracking
+firebase init
+----
+
+* In the public folder, we will create a new Angular application. To do so, we need
+** to install the `@angular/cli` NPM package
+** and use `ng new` command from your terminal (again keep the default answers to all questions asked by the CLI)
+
+[source]
+----
+cd public
+npx @angular/cli new weight-tracking
+cd weight-tracking
+----
+
+* We then install the `@angular/fire` dependency.
+
+[source]
+----
+npm i @angular/fire firebase
+----
+
+* You can now start the application 
+
+[source]
+----
+npm start
+----
+
+* In the Angular module of your application, we need to import Firebase dedicated modules. Please be sure that yours looks like the one below. 
+
+[source]
+----
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import {AngularFireModule} from '@angular/fire';
+import {environment} from '../environments/environment';
+import {AngularFireAuthModule} from '@angular/fire/auth';
+import { FormsModule } from '@angular/forms';
+
+@NgModule({
+  declarations: [
+    AppComponent
+  ],
+  imports: [
+    FormsModule,
+    BrowserModule,
+    AngularFireAuthModule,
+    AngularFireModule.initializeApp(environment.firebase),
+  ],
+  providers: [],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
+
+----
+
+* You will need to create `firebase` environnement configuration from the Firebase UI, and copy/paste it in the environnement.ts (and environnement.prod.ts)
+
+[source]
+----
+export const environment = {
+  production: false,
+  firebase: {
+    apiKey: '<your-key>',
+    authDomain: '<your-project-authdomain>',
+    databaseURL: '<your-database-URL>',
+    projectId: '<your-project-id>',
+    storageBucket: '<your-storage-bucket>',
+    messagingSenderId: '<your-messaging-sender-id>',
+    appId: '<your-app-id>',
+    measurementId: '<your-measurement-id>'
+  }
+};
+----
+
+== Authentication
+
+We will in this part try to implement the Authentication part of our application. You must first be sure that the Authentication 
+via the Google provider has been enabled on the Firebase Console. 
+
+In order to make your life easier, you can copy this snippet of HTML and paste it in the `app.component.html` file. 
+
+[source]
+----
+<ng-container *ngIf="!(isLoggedIn | async)">
+  <button (click)="login()">Login</button>
+</ng-container>
+<ng-container *ngIf="(isLoggedIn | async)">
+  <button (click)="logout()">Logout</button>
+</ng-container>
+
+<div [hidden]="!(isLoggedIn | async)" id="chartContainer" style="height: 370px; width: 100%"></div>
+
+
+<ng-container *ngIf="(isLoggedIn | async)">
+  <!--div class="columns">
+    <div class="column">
+      <form (ngSubmit)="addOrUpdateWeight()">
+        <label
+          >Date
+          <input
+            type="date"
+            name="timestamp"
+            [(ngModel)]="editingWeight.timestamp"
+        /></label>
+        <label
+          >Weight <input name="weight" [(ngModel)]="editingWeight.weight"
+        /></label>
+        <button>valider</button>
+      </form>
+    </div>
+    <div class="column">
+      <table class="table">
+        <caption>
+          Weight Tracking
+        </caption>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Value</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let value of weights$ | async">
+            <td>{{ value.timestamp | date }}</td>
+            <td>{{ value.weight }}</td>
+            <td>
+              <button
+                (click)="editingWeight = value"
+                [attr.aria-label]="'Editing your weight for ' + value.timestamp"
+              >
+                Editer
+              </button>
+              <button
+                (click)="delete(value)"
+                [attr.aria-label]="'Delete your weight for ' + value.timestamp"
+              >
+                Supprimer
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div-->
+</ng-container>
+----
+
+With this template in place, we just need to implement 3 méthods or instance variable in the corresponding TypeScript class. 
+
+* login
+* logout
+* isLoggedIn
+
+You can find below the structure of this Typescript class. We will add other properties in the next part of this workshop. 
+
+[source]
+----
+import { Component, OnInit } from '@angular/core';
+import { AngularFireAuth } from '@angular/fire/auth';
+import {
+  AngularFirestore,
+  AngularFirestoreCollection,
+} from '@angular/fire/firestore';
+import { Observable, of } from 'rxjs';
+import { map } from 'rxjs/operators';
+import firebase from 'firebase/app';
+
+declare const CanvasJS: any;
+
+interface Weight {
+  timestamp: Date;
+  weight: number;
+}
+
+type WeightWithId = Weight & { id?: string };
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css'],
+})
+export class AppComponent implements OnInit {
+  chart: any;
+  isLoggedIn: Observable<boolean>;
+  editingWeight: Partial<WeightWithId> = {};
+
+  constructor(private afs: AngularFirestore, private auth: AngularFireAuth) {
+    this.isLoggedIn = ...
+  }
+
+  delete(weight: WeightWithId){
+  }
+
+  addOrUpdateWeight() {
+    
+  }
+
+  login() {
+
+  }
+
+  logout() {
+  }
+
+  ngOnInit(): void {
+    this.chart = new CanvasJS.Chart('chartContainer', {
+      animationEnabled: true,
+      theme: 'light2',
+      title: {
+        text: 'Suivi du poids',
+      },
+      axisX: {
+        valueFormatString: 'DD MMM',
+        crosshair: {
+          enabled: true,
+          snapToDataPoint: true,
+        },
+      },
+      data: [
+        {
+          type: 'line',
+          indexLabelFontSize: 16,
+          dataPoints: [],
+        },
+      ],
+    });
+
+    this.chart.render();
+  }
+
+  displayData(weights: WeightWithId[]) {
+    this.chart.options.data[0].dataPoints = weights
+      .sort(function (a, b) {
+        return (
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+      })
+      .map((w) => ({
+        x: new Date(w.timestamp),
+        y: +w.weight,
+      }));
+    this.chart.render();
+  }
+}
+
+----
+
+* In order to be able to implement these three methods, you need to use the injected service `AngularFireAuth`. This service propose three interesting methods/properties : 
+** `signInWithPopup``
+** `signOut` 
+** `user` (returning an Observable)
+
+With only these three elements you are able to implement a login / logout mechanism. 
+
+== Firestore - Collections
+
+We can now display our data in our dashboard
+
+* Uncomment the part of the HTML code in charge of displaying the main part of the application. 
+
+* Update the TypeScript class, in order to initialize the `weights$` property to an observable of `WeightWithId[]` related to all data available in a `weight` Firebase collection. 
+Be careful, in order to be able to update or delete an item later, the model of our data should also contain the ID generated by Firestore. 
+
+You need to do something similar to this documentation : https://github.com/angular/angularfire/blob/master/docs/firestore/collections.md#snapshotchanges
+You can do this initialization in the `constructor` of the component. 
+
+* For the moment, you do not have any data on the screen, because you do not have any data stored on Firebase. You can add manually data via the Firebase UI if you want (please make sure your respect the interface of the data)
+
+== Create / Update / Delete items
+
+You can now implement two next methods in order to add / update or delete a track. Have a look to the live-reload mode of our 
+table and graph when we update our data. 
+
+* In order to add or update, we will update the empty `addOrUpdateWeight` method. Based on the presence or not of the `id` property, 
+you have to call a differente methods : 
+** `myCollection.doc(idDocument).update(newDocument)` for an update
+** `myCollection.add(newDocument)` for an addition
+
+The data used by te HTML form is stored in the instance variable `editingWeight`.
+
+== Deployment
+
+We will now deploy our brand new web app. 
+
+* First, we need to modify the `firebase.json` file. Angular will generate the final application in a specific folder. Firebase should
+know this folder in order to be able to deploy it.  Please make sure that the `hosting` block of this file looks like the snippet bellow. 
+
+[source]
+----
+"hosting": {
+    "public": "public/weight-tracking/dist/weight-tracking",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "predeploy": ["npm --prefix public/weight-tracking run build --prod"],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+----
+
+* You can now run via your Terminal the following commad : 
+
+[source]
+----
+firebase deploy
+----
+
+* After a short delay, your application should be up and running. 
+
+== Cloud functions
+
+As a example of cloud function, we will create a real-time converter (kg -> pounds as a first use case). 
+So everytime a track is added or updated, via the `onWrite` method, you should create a function that give you the possibility to add
+a new field `weight_pounds` containing the right value. 
+
+* Here is a simple sample of code that can be usefull for this use case. 
+
+[source]
+----
+exports.onCreateDocument = functions.firestore.document("/weight/{referentId}").onWrite((change, context) => {
+    const data = change.after.data();
+    return change.after.ref.set({
+        weight_pounds: ...
+    }, { merge: true})
+})
+----
+
+* You need to deploy again your application. If you only want to deploy your cloud function, you can run the followinf command : 
+
+[source]
+----
+firebase deploy --only functions
+----
+
+* Double check your console, and now everytime you add data, a new property should be added. 

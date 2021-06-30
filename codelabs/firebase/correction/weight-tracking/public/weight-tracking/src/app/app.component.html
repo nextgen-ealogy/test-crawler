@@ -1,0 +1,63 @@
+<ng-container *ngIf="!(isLoggedIn | async)">
+  <button (click)="login()">Login</button>
+</ng-container>
+<ng-container *ngIf="(isLoggedIn | async)">
+  <button (click)="logout()">Logout</button>
+</ng-container>
+
+<div [hidden]="!(isLoggedIn | async)" id="chartContainer" style="height: 370px; width: 100%"></div>
+
+
+<ng-container *ngIf="(isLoggedIn | async)">
+  <div class="columns">
+    <div class="column">
+      <form (ngSubmit)="addOrUpdateWeight()">
+        <label
+          >Date
+          <input
+            type="date"
+            name="timestamp"
+            [(ngModel)]="editingWeight.timestamp"
+        /></label>
+        <label
+          >Weight <input name="weight" [(ngModel)]="editingWeight.weight"
+        /></label>
+        <button>valider</button>
+      </form>
+    </div>
+    <div class="column">
+      <table class="table">
+        <caption>
+          Weight Tracking
+        </caption>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Value</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let value of weights$ | async">
+            <td>{{ value.timestamp | date }}</td>
+            <td>{{ value.weight }}</td>
+            <td>
+              <button
+                (click)="editingWeight = value"
+                [attr.aria-label]="'Editing your weight for ' + value.timestamp"
+              >
+                Editer
+              </button>
+              <button
+                (click)="delete(value)"
+                [attr.aria-label]="'Delete your weight for ' + value.timestamp"
+              >
+                Supprimer
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</ng-container>
