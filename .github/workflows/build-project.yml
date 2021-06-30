@@ -35,6 +35,7 @@ jobs:
         run: |
           cd innersource-crawler
           python ./crawler.py
+          touch repos.json
           mv repos.json ../data/repos.json
       - name: Build Website
         run: |
