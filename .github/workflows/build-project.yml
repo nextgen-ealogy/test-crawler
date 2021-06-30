@@ -38,9 +38,8 @@ jobs:
         run: |
           mkdir css
           npm i
-          ls node_modules/@mozaic-ds
-          ls node_modules/@mozaic-ds/web-fonts
           npm run build
+          mv _site docs
       - name: Checkin repos
         uses: test-room-7/action-update-file@v1
         with:
