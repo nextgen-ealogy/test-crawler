@@ -33,6 +33,7 @@ jobs:
         run: |
           cd innersource-crawler
           python ./crawler.py
+          touch repos.json
           mv repos.json ../repos.json
       - name: Checkin repos
         uses: test-room-7/action-update-file@v1
