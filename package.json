@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "npm run css:build && eleventy --serve",
-    "build": "npm run css:build && eleventy --pathprefix 'adeo-developer-experience-aggegrator'",
+    "build": "npm run css:build && eleventy --pathprefix 'test-crawler'",
     "start:prod": "npm run build && serve _site",
     "css:build": "npm run statics:copy && npx postcss scss/bundle.scss --output css/bundle.css",
     "css:watch": "npm run statics:copy && npx postcss scss/bundle.scss --output css/bundle.css --watch",
