@@ -10,7 +10,7 @@
     "css:build": "npm run statics:copy && npx postcss scss/bundle.scss --output css/bundle.css",
     "css:watch": "npm run statics:copy && npx postcss scss/bundle.scss --output css/bundle.css --watch",
     "css:lint-fix": "npx stylelint scss/*.scss --fix",
-    "statics:copy": "rm -rf css/static && mkdir -p css/static && cp node_modules/@mozaic-ds/web-fonts/*.{woff,woff2} css/static"
+    "statics:copy": "mkdir -p css/static && cp node_modules/@mozaic-ds/web-fonts/*.{woff,woff2} css/static"
   },
   "keywords": [],
   "author": "",
